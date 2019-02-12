@@ -12,10 +12,18 @@ function installchunc {
 	make;
 	cp bin/chunkc /use/local/bin;
 }
+function installplugins {
+	cd src/plugins;
+	for d in */ 
+	do
+	    (cd "$d" && ls -al && make install && mkdir -p ~/.chunkwm_plugins && cp ../../../plugins/* ~/.chunkwm_plugins)
+	done
+}
 cd $BASE_DIR;
 installcwm;
 cd $BASE_DIR
 installchunc;
 cd $BASE_DIR;
+installplugins
 launchctl load -w ~/Library/LaunchAgents/com.koekeishiya.chunkwm.plist;
 
