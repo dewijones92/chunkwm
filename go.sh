@@ -26,5 +26,6 @@ installchunc;
 cd $BASE_DIR;
 installplugins
 
+ln -f -s custom_config/chunkwmrc ~/.chunkwmrc
 launchctl load -F -w ~/Library/LaunchAgents/com.koekeishiya.chunkwm.plist;
 
