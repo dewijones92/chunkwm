@@ -1,16 +1,16 @@
 #!/bin/bash
 BASE_DIR=$(pwd);
 function installcwm {
-	rm -rf bin/;
-	make install;
-	cp bin/chunkwm /usr/local/bin;
+	rm -rf bin/
+	make install
+	cp bin/chunkwm /usr/local/bin
 	cp examples/chunkwmrc ~/.chunkwmrc
-	cp examples/com.koekeishiya.chunkwm.plist ~/Library/LaunchAgents;
+	cp examples/com.koekeishiya.chunkwm.plist ~/Library/LaunchAgents
 }
 function installchunc {
-	cd src/chunc;
-	make;
-	cp bin/chunkc /use/local/bin;
+	cd src/chunkc
+        make
+        cp bin/chunkc /usr/local/bin
 }
 function installplugins {
 	cd src/plugins;
@@ -25,5 +25,6 @@ cd $BASE_DIR
 installchunc;
 cd $BASE_DIR;
 installplugins
+
 launchctl load -F -w ~/Library/LaunchAgents/com.koekeishiya.chunkwm.plist;
 
