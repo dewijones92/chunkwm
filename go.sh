@@ -1,4 +1,5 @@
 #!/bin/bash
+launchctl unload  ~/Library/LaunchAgents/com.koekeishiya.chunkwm.plist;
 BASE_DIR=$(pwd);
 function installcwm {
 	rm -rf bin/
@@ -26,6 +27,6 @@ installchunc;
 cd $BASE_DIR;
 installplugins
 
-ln -f -s custom_config/chunkwmrc ~/.chunkwmrc
+ln -f -s $BASE_DIR/custom_config/chunkwmrc ~/.chunkwmrc
 launchctl load -F -w ~/Library/LaunchAgents/com.koekeishiya.chunkwm.plist;
 
