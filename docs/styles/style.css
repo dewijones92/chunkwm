@@ -3,8 +3,8 @@ body {
     margin: 0 auto;
     font-family: "Lucida Console", Monaco, monospace;
     background-color: #202020;
-    height: 100vh;
-    overflow: hidden;
+    height: 100%;
+    font-size: 14px;
 }
 
 pre {
@@ -67,21 +67,21 @@ a:hover {
 }
 
 #navbar-text h4 {
-    font-size: 2.19vmin;
+    font-size: 1.5em;
     margin-bottom: 0;
     color: #dfdfdf;
 }
 
 #navbar-text p {
-    font-size: 1.44vmin;
+    font-size: 1em;
     margin-top: 0;
     color: #8fee96;
 }
 
 #navbar-menu {
-    float: right;
-    padding-top: 4.4vmin;
-    font-size: 1.75vmin;
+    padding-top: 3em;
+    padding-left: 13em;
+    font-size: 1.2em;
 }
 
 #navbar-menu li {
@@ -114,18 +114,11 @@ a:hover {
 #body {
     width: 100vmin;
     top: 18vmin;
-    height: 80vh;
-    overflow: hidden;
     padding-left: 1vmin;
 }
 
 #contents {
-    font-size: 1.5vmin;
     color: #d5c4a1;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    top: 18vmin;
-    height: 80vh;
     width: 100vmin;
     margin-right: -50px;
     padding-right: 50px;
@@ -146,11 +139,7 @@ a:hover {
 }
 
 #footer {
-    font-size: 1.08vmin;
+    font-size: .75em;
     color: #8fee96;
-    overflow: hidden;
-    position: absolute;
-    left: 50%;
-    bottom: 0;
-    transform: translate(-50%, 0);
+    transform: translate(41%, 0);
 }
