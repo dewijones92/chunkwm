@@ -19,20 +19,30 @@
 #define internal static
 #define local_persist static
 
+#define kCPSAllWindows    0x100
+#define kCPSUserGenerated 0x200
+#define kCPSNoWindows     0x400
+
 extern "C" int CGSMainConnectionID(void);
 extern "C" CGError CGSGetWindowLevel(const int cid, int wid, int *wlvl);
 extern "C" OSStatus CGSFindWindowByGeometry(int cid, int zero, int one, int zero_again, CGPoint *screen_point, CGPoint *window_coords_out, int *wid_out, int *cid_out);
 extern "C" CGError CGSConnectionGetPID(const int cid, pid_t *pid);
+extern "C" CGError _SLPSSetFrontProcessWithOptions(ProcessSerialNumber *psn, unsigned int wid, unsigned int mode);
+extern "C" CGError SLPSPostEventRecordTo(ProcessSerialNumber *psn, uint8_t *bytes);
 
 internal event_tap EventTap;
 internal uint32_t MouseModifier;
 internal bool volatile IsActive;
+internal int Connection;
 internal uint32_t volatile FocusedWindowId;
+internal pid_t volatile FocusedWindowPid;
+internal ProcessSerialNumber volatile FocusedWindowPsn;
 internal chunkwm_api API;
 internal AXUIElementRef SystemWideElement;
 internal float MouseMotionInterval;
 internal float LastEventTime;
 internal bool StandbyOnFloat;
+internal bool DisableAutoraise;
 
 internal bool
 IsWindowLevelAllowed(int WindowLevel)
@@ -53,6 +63,36 @@ IsWindowLevelAllowed(int WindowLevel)
     return false;
 }
 
+internal void
+send_event(ProcessSerialNumber *WindowPsn, uint32_t WindowId, uint8_t op)
+{
+    uint8_t bytes[0xf8] = {
+        [0x4] = 0xf8,
+        [0x8] = 0xd,
+        [0x8a] = op
+    };
+    memcpy(bytes + 0x3c, &WindowId, sizeof(uint32_t));
+    SLPSPostEventRecordTo(WindowPsn, bytes);
+}
+
+internal void
+send_defer_ordering_event(ProcessSerialNumber *psn, uint32_t wid)
+{
+    send_event(psn, wid, 0x9);
+}
+
+internal void
+send_pseudo_activate_event(ProcessSerialNumber *psn)
+{
+    send_event(psn, 0, 0x2);
+}
+
+internal void
+send_reactivate_event(ProcessSerialNumber *psn, uint32_t wid)
+{
+    send_event(psn, wid, 0x12);
+}
+
 internal inline void
 FocusFollowsMouse(CGEventRef Event)
 {
@@ -64,8 +104,8 @@ FocusFollowsMouse(CGEventRef Event)
     CFStringRef Role;
     AXUIElementRef Element;
     AXUIElementRef WindowRef = NULL;
+    ProcessSerialNumber WindowPsn;
 
-    local_persist int Connection = CGSMainConnectionID();
     CGPoint CursorPosition = CGEventGetLocation(Event);
     CGSFindWindowByGeometry(Connection, 0, 1, 0, &CursorPosition, &WindowPosition, &WindowId, &WindowConnection);
 
@@ -76,6 +116,7 @@ FocusFollowsMouse(CGEventRef Event)
     CGSGetWindowLevel(Connection, WindowId, &WindowLevel);
     if (!IsWindowLevelAllowed(WindowLevel)) return;
     CGSConnectionGetPID(WindowConnection, &WindowPid);
+    GetProcessForPID(WindowPid, &WindowPsn);
 
     AXUIElementCopyElementAtPosition(SystemWideElement, CursorPosition.x, CursorPosition.y, &Element);
     if (!Element) return;
@@ -89,10 +130,22 @@ FocusFollowsMouse(CGEventRef Event)
         }
         CFRelease(Role);
     }
-
     if (!WindowRef) return;
-    AXLibSetFocusedWindow(WindowRef);
-    AXLibSetFocusedApplication(WindowPid);
+
+    if (DisableAutoraise) {
+        _SLPSSetFrontProcessWithOptions(&WindowPsn, WindowId, kCPSUserGenerated);
+        send_reactivate_event(&WindowPsn, WindowId);
+
+#if 0
+        if (FocusedWindowPid == WindowPid) {
+        } else {
+        }
+#endif
+    } else {
+        AXLibSetFocusedWindow(WindowRef);
+        AXLibSetFocusedApplication(WindowPid);
+    }
+
     CFRelease(WindowRef);
 }
 
@@ -137,6 +190,8 @@ ApplicationActivatedHandler(void *Data)
     if (WindowRef) {
         uint32_t WindowId = AXLibGetWindowID(WindowRef);
         FocusedWindowId = WindowId;
+        FocusedWindowPid = Application->PID;
+        memcpy((void*)&FocusedWindowPsn, (void*)&Application->PSN, sizeof(ProcessSerialNumber));
         CFRelease(WindowRef);
     }
 }
@@ -146,6 +201,8 @@ WindowFocusedHandler(void *Data)
 {
     macos_window *Window = (macos_window *) Data;
     FocusedWindowId = Window->Id;
+    FocusedWindowPid = Window->Owner->PID;
+    memcpy((void*)&FocusedWindowPsn, (void*)&Window->Owner->PSN, sizeof(ProcessSerialNumber));
 }
 
 internal inline void
@@ -203,11 +260,14 @@ PLUGIN_BOOL_FUNC(PluginInit)
     EventTap.Mask = (1 << kCGEventMouseMoved);
     bool Result = BeginEventTap(&EventTap, &EventTapCallback);
     if (Result) {
+        Connection = CGSMainConnectionID();
         BeginCVars(&API);
         CreateCVar("ffm_bypass_modifier", "fn");
         CreateCVar("ffm_standby_on_float", 1);
+        CreateCVar("ffm_disable_autoraise", 0);
         CreateCVar("mouse_motion_interval", 35.0f);
         SetMouseModifier(CVarStringValue("ffm_bypass_modifier"));
+        DisableAutoraise = CVarIntegerValue("ffm_disable_autoraise");
         StandbyOnFloat = CVarIntegerValue("ffm_standby_on_float");
         MouseMotionInterval = CVarFloatingPointValue("mouse_motion_interval");
     }
