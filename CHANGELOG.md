@@ -2,7 +2,17 @@
 
 #### other changes
 
- - update spaces support for macOS Mojave 10.14.4 (fast-switch, create and destroy) (#571)
+ - sanitize plugin filename to prevent directory traversal when a plugin directory has been specified (#604)
+
+ - some features of chunkwm-sa should once again work properly for macOS High Sierra (#611)
+
+----------
+
+### version 0.4.9
+
+ - update spaces support for macOS Mojave 10.14.4 (fast-switch, create and destroy, move to monitor) (#571, #583)
+
+ - use unix domain socket (file) and pid-file instead of INET port when listening to commands (#434)
 
 ----------
 

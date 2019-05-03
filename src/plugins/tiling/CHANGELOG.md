@@ -2,6 +2,14 @@
 
 #### other changes
 
+ - properly detect size of Dock when calculating desktop offset (#607)
+
+----------
+
+### version 0.3.16
+
+#### other changes
+
  - fixed crash upon querying the monocle-index in a monocle desktop with only floating windows (#497)
 
  - fixed an issue that caused minimized and hidden applications to be misplaced upon restoration (#560)
